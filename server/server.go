@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -72,7 +73,12 @@ func main() {
 
 	serverIP := os.Getenv("SERVER_IP")
 	addrPort := os.Getenv("ADDR_PORT")
+	
 	serverAddr := fmt.Sprintf("%s:%s", serverIP, addrPort)
+	tcpListener, err := net.Listen("tcp4", serverAddr)
+	if err != nil {
+		log.Fatalf("IPv4 리슨 실패: %v", err)
+	}
 
 	certPath := filepath.Join("cert", "server.crt")
 	keyPath := filepath.Join("cert", "server.key")
@@ -81,12 +87,11 @@ func main() {
 	go handleMessages()
 
 	server := &http.Server{
-		Addr:      serverAddr,
 		TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12},
 	}
 
 	fmt.Println("WebSocket Secure 서버 시작:", "wss://"+serverAddr+"/ws")
-	err = server.ListenAndServeTLS(certPath, keyPath)
+	err = server.ServeTLS(tcpListener, certPath, keyPath)
 	if err != nil {
 		log.Fatal("서버 실행 실패:", err)
 	}
