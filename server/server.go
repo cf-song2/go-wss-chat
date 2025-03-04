@@ -70,23 +70,27 @@ func main() {
 	addrPort := os.Getenv("ADDR_PORT")
 	serverAddr := fmt.Sprintf("%s:%s", serverIP, addrPort)
 
-	tcpListener, err := net.Listen("tcp", serverAddr)
+	// ✅ IPv4 강제 설정
+	tcpListener, err := net.Listen("tcp4", serverAddr)
 	if err != nil {
-		log.Fatalf("IPv4/IPv6 리슨 실패: %v", err)
+		log.Fatalf("IPv4 리슨 실패: %v", err)
 	}
 
 	certPath := filepath.Join("cert", "fullchain.pem")
 	keyPath := filepath.Join("cert", "server.key")
 
-	// ✅ 정적 파일 서빙 추가
+	// ✅ 정적 파일 서빙 설정
 	fs := http.FileServer(http.Dir("static"))
-	http.Handle("/", fs)
+	mux := http.NewServeMux()
+	mux.Handle("/", fs)
+	mux.HandleFunc("/ws", handleConnections)
 
-	http.HandleFunc("/ws", handleConnections)
 	go handleMessages()
 
+	// ✅ 올바른 TLS 설정 적용
 	server := &http.Server{
 		Addr:      serverAddr,
+		Handler:   mux,
 		TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12},
 	}
 
