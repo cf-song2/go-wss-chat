@@ -80,7 +80,7 @@ func main() {
 		log.Fatalf("IPv4 리슨 실패: %v", err)
 	}
 
-	certPath := filepath.Join("cert", "server.crt")
+	certPath := filepath.Join("cert", "fullchain.pem")
 	keyPath := filepath.Join("cert", "server.key")
 
 	http.HandleFunc("/ws", handleConnections)
