@@ -20,9 +20,8 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-var clients = make(map[*websocket.Conn]bool)
+var clients sync.Map
 var broadcast = make(chan string)
-var mutex = sync.Mutex{}
 
 func handleConnections(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -32,17 +31,13 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	mutex.Lock()
-	clients[conn] = true
-	mutex.Unlock()
+	clients.Store(conn, true)
 
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("클라이언트 연결 종료:", err)
-			mutex.Lock()
-			delete(clients, conn)
-			mutex.Unlock()
+			clients.Delete(conn)
 			break
 		}
 		broadcast <- string(msg)
@@ -52,16 +47,16 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 func handleMessages() {
 	for {
 		msg := <-broadcast
-		mutex.Lock()
-		for client := range clients {
+		clients.Range(func(key, value interface{}) bool {
+			client := key.(*websocket.Conn)
 			err := client.WriteMessage(websocket.TextMessage, []byte(msg))
 			if err != nil {
 				log.Println("메시지 전송 실패:", err)
 				client.Close()
-				delete(clients, client)
+				clients.Delete(client)
 			}
-		}
-		mutex.Unlock()
+			return true
+		})
 	}
 }
 
@@ -73,11 +68,11 @@ func main() {
 
 	serverIP := os.Getenv("SERVER_IP")
 	addrPort := os.Getenv("ADDR_PORT")
-	
 	serverAddr := fmt.Sprintf("%s:%s", serverIP, addrPort)
-	tcpListener, err := net.Listen("tcp4", serverAddr)
+
+	tcpListener, err := net.Listen("tcp", serverAddr)
 	if err != nil {
-		log.Fatalf("IPv4 리슨 실패: %v", err)
+		log.Fatalf("IPv4/IPv6 리슨 실패: %v", err)
 	}
 
 	certPath := filepath.Join("cert", "fullchain.pem")
@@ -87,6 +82,7 @@ func main() {
 	go handleMessages()
 
 	server := &http.Server{
+		Addr:      serverAddr,
 		TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12},
 	}
 
