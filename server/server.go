@@ -78,6 +78,10 @@ func main() {
 	certPath := filepath.Join("cert", "fullchain.pem")
 	keyPath := filepath.Join("cert", "server.key")
 
+	// ✅ 정적 파일 서빙 추가
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/", fs)
+
 	http.HandleFunc("/ws", handleConnections)
 	go handleMessages()
 
