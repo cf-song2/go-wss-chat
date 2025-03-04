@@ -6,19 +6,25 @@ LOG_FILE=server.log
 
 GO=go
 
-run-server:
+# 의존성 정리 및 패키지 설치
+ensure-deps:
+	@echo "🔄 Ensuring dependencies..."
+	cd server && $(GO) mod tidy
+	cd client && $(GO) mod tidy
+
+run-server: ensure-deps
 	sudo $(GO) run server/server.go > $(LOG_FILE) 2>&1 &
 
-run-client:
+run-client: ensure-deps
 	$(GO) run client/client.go
 
-build-server:
+build-server: ensure-deps
 	$(GO) build -o $(SERVER_BINARY) server/server.go
 
-build-client:
+build-client: ensure-deps
 	$(GO) build -o $(CLIENT_BINARY) client/client.go
 
-build:
+build: ensure-deps
 	$(MAKE) build-server
 	$(MAKE) build-client
 

@@ -9,4 +9,5 @@ server/.env
 
 client_bin
 server_bin
-server_log
+server.log
+server.pid
