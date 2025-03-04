@@ -1,0 +1,11 @@
+/cert/
+
+server/.env
+
+/go.sum
+/go.mod
+/bin/
+/pkg/
+
+client_bin
+server_bin
