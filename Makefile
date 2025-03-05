@@ -10,7 +10,6 @@ GO=go
 ensure-deps:
 	@echo "🔄 Ensuring dependencies..."
 	cd server && $(GO) mod tidy
-	cd client && $(GO) mod tidy
 
 run-server: ensure-deps
 	sudo $(GO) run server/server.go > $(LOG_FILE) 2>&1 &
