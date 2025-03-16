@@ -1,7 +1,6 @@
 PROJECT_NAME=go-wss-chat
 
 SERVER_BINARY=server_bin
-CLIENT_BINARY=client_bin
 LOG_FILE=server.log
 
 GO=go
@@ -12,36 +11,29 @@ ensure-deps:
 	cd server && $(GO) mod tidy
 
 run-server: ensure-deps
-	sudo $(GO) run server/server.go > $(LOG_FILE) 2>&1 &
-
-run-client: ensure-deps
-	$(GO) run client/client.go
+	$(GO) run server/server.go
 
 build-server: ensure-deps
 	$(GO) build -o $(SERVER_BINARY) server/server.go
 
-build-client: ensure-deps
-	$(GO) build -o $(CLIENT_BINARY) client/client.go
-
-build: ensure-deps
-	$(MAKE) build-server
-	$(MAKE) build-client
-
 start-server: build-server
+	@echo "🟢 Starting server..."
 	sudo ./$(SERVER_BINARY) > $(LOG_FILE) 2>&1 & echo $$! > server.pid
-
-start-client: build-client
-	./$(CLIENT_BINARY)
+	@echo "📝 Logging to $(LOG_FILE)"
 
 stop-server:
 	@if [ -f server.pid ]; then \
-		echo "Stopping server..."; \
+		echo "🛑 Stopping server..."; \
 		sudo kill `cat server.pid`; \
 		rm -f server.pid; \
 	else \
-		echo "No server running."; \
+		echo "⚠️ No server running."; \
 	fi
 
+view-log:
+	@echo "📜 Viewing server log (Ctrl+C to exit)"
+	@tail -f $(LOG_FILE)
+
 clean:
-	rm -f $(SERVER_BINARY) $(CLIENT_BINARY) $(LOG_FILE) server.pid
+	rm -f $(SERVER_BINARY) $(LOG_FILE) server.pid
 
