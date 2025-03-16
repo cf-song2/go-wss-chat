@@ -1,4 +1,4 @@
-const wsUrl = "wss://www.spectrum.cecil-personal.site/ws";
+const wsUrl = "wss://spectrum.cecil-personal.site/ws";
 let ws;
 const sentTimestamps = {};
 let reconnectInterval = 5000;
