@@ -54,18 +54,19 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 		log.Println("Fail to upgrade connection:", err)
 		return
 	}
-	defer conn.Close()
 
 	// Get inital message
 	_, msg, err := conn.ReadMessage()
 	if err != nil {
 		log.Println("Fail to read initial message:", err)
+		conn.Close()
 		return
 	}
 
 	var initMessage Message
 	if err := json.Unmarshal(msg, &initMessage); err != nil {
 		log.Println("Fail to unmarshal initial message:", err)
+		conn.Close()
 		return
 	}
 
@@ -87,6 +88,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 			log.Printf("[%s] %s is disconnected: %v", room, sender, err)
 			clients.(*sync.Map).Delete(conn)
 			broadcast <- Message{Room: room, Sender: sender, Content: "disconnected.", Type: "leave"}
+			conn.Close()
 			break
 		}
 

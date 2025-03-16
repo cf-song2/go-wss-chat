@@ -9,21 +9,38 @@ function connectWebSocket() {
     ws.onopen = () => {
         console.log("✅ Connected to WebSocket server");
         updateStatus("🟢 Connected");
+    
+        const initMessage = {
+            room: "default",           
+            sender: "user-" + Date.now(),
+            content: "",
+            type: "join"
+        };
+        ws.send(JSON.stringify(initMessage));
     };
 
     ws.onmessage = (event) => {
         const receivedTime = new Date();
-        const msgText = event.data;
 
-        let latencyText = "";
-        if (sentTimestamps[msgText]) {
-            const sentTime = sentTimestamps[msgText];
-            const latency = receivedTime - sentTime;
-            latencyText = ` (latency: ${latency} ms)`;
-            delete sentTimestamps[msgText];
+        let msgObj;
+        try {
+            msgObj = JSON.parse(event.data);
+        } catch (err) {
+            console.error("❌ Failed to parse message:", err);
+            return;
         }
 
-        displayMessage(`[message received: ${formatTime(receivedTime)}] ${msgText}${latencyText}`);
+        const msgText = `[${msgObj.sender}] ${msgObj.content}`;
+
+        let latencyText = "";
+        if (sentTimestamps[msgObj.content]) {
+            const sentTime = sentTimestamps[msgObj.content];
+            const latency = receivedTime - sentTime;
+            latencyText = ` (latency: ${latency} ms)`;
+            delete sentTimestamps[msgObj.content];
+        }
+
+        displayMessage(`[received: ${formatTime(receivedTime)}] ${msgText}${latencyText}`);
     };
 
     ws.onclose = () => {
