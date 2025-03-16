@@ -1,18 +1,21 @@
-const wsUrl = "wss://spectrum.cecil-personal.site/ws";
+const clientId = localStorage.getItem("clientId") || crypto.randomUUID();
+localStorage.setItem("clientId", clientId);
+
 let ws;
 const sentTimestamps = {};
-let reconnectInterval = 5000;
+const reconnectInterval = 5000;
 
 function connectWebSocket() {
+    const wsUrl = `wss://spectrum.cecil-personal.site/ws?clientId=${clientId}`;
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-        console.log("✅ Connected to WebSocket server");
+        console.log(`✅ Connected as ${clientId}`);
         updateStatus("🟢 Connected");
-    
+
         const initMessage = {
-            room: "default",           
-            sender: "user-" + Date.now(),
+            room: "default",
+            sender: clientId,
             content: "",
             type: "join"
         };
@@ -70,7 +73,7 @@ function sendMessage() {
 }
 
 function formatTime(date) {
-    return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}.${date.getMilliseconds()}`;
+    return `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}.${date.getMilliseconds()}`;
 }
 
 function displayMessage(message) {
